@@ -1,0 +1,72 @@
+Nombre provisional: "Citas del Alma"
+
+Se trata de una aplicación móvil centrada en citas literarias, frases de motivación y consejos de vida. El objetivo es ofrecer al usuario inspiración diaria, herramientas para el crecimiento personal y un espacio para reflexionar.
+
+Navegación de la App (Estructura por pantallas):
+Al ingresar a la app, el usuario accede a la pantalla principal, donde podrá:
+
+Ver citas de forma continua mediante scroll vertical.
+
+Guardar, compartir o marcar como favoritas las frases que más le gusten.
+
+La app contará con 5 secciones principales, accesibles deslizando horizontalmente o tocando los puntos indicadores inferiores (el punto más grande indica la página actual):
+
+1. Citas del día (pantalla central)
+Vista principal con scroll infinito de frases y citas.
+
+Cada cita tendrá opciones para guardar, compartir, añadir a favoritos o memorizar.
+
+Las citas se seleccionarán según los temas de preferencia del usuario (motivación, amor, religión, filosofía, etc.).
+
+2. Cita global + Lección de vida (deslizando a la izquierda)
+Una cita diaria global, igual para todos los usuarios.
+
+Un consejo, instrucción o lección de vida que complemente la cita.
+
+Esta sección busca generar reflexión colectiva.
+
+3. Biblioteca personal (segunda pantalla izquierda)
+Aquí se encuentran todas las citas guardadas:
+
+Citas del scroll
+
+Citas personalizadas
+
+Citas globales
+
+Se puede filtrar por:
+
+Todas
+
+Favoritas
+
+Memorizadas
+
+4. Cita personalizada + consejo diario (deslizando a la derecha)
+Una cita especialmente seleccionada para el usuario según su perfil.
+
+Consejo diario adaptado a sus intereses y temas preferidos.
+
+Ideal para quienes buscan un momento íntimo de reflexión.
+
+5. Perfil y ajustes (segunda pantalla derecha)
+Opciones para:
+
+Añadir nombre y foto de perfil.
+
+Seleccionar los temas que más interesan (motivación, autores clásicos, amor, filosofía, etc.).
+
+Elegir autores preferidos (Cervantes, Nietzsche, Baltasar Gracián, etc.).
+
+Configurar notificaciones diarias.
+
+Gestionar favoritos y citas memorizadas.
+
+Interfaz de navegación:
+La navegación entre las secciones se realiza deslizando la pantalla lateralmente.
+
+También habrá indicadores en forma de puntos en la parte inferior para facilitar el acceso directo a cada sección.
+
+El punto correspondiente a la pantalla actual será más grande y visible.
+
+El usuario podrá tocar cualquier punto para ir directamente a la sección deseada.
