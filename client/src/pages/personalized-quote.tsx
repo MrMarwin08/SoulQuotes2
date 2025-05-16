@@ -2,7 +2,7 @@ import React from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { apiRequest } from "@/lib/queryClient";
-import { Quote, defaultUser } from "@/lib/utils";
+import { Quote, defaultUser, cn } from "@/lib/utils";
 import { Bookmark, Brain, Share2, Clock } from "lucide-react";
 
 interface PersonalizedQuoteScreenProps {
@@ -109,90 +109,78 @@ const PersonalizedQuoteScreen: React.FC<PersonalizedQuoteScreenProps> = ({ userI
 
   // Find user's preferred topics for explanation
   const userTopics = defaultUser.preferences?.topics || [];
-  const relevantTopic = userTopics.find(topic => 
-    quote.category.toLowerCase().includes(topic.toLowerCase())
-  ) || quote.category;
+  const relevantTopic = Array.isArray(userTopics) ? 
+    userTopics.find(topic => 
+      quote.category.toLowerCase().includes(topic.toLowerCase())
+    ) || quote.category 
+    : quote.category;
 
   return (
-    <div className="flex flex-col h-full p-5">
-      <h1 className="text-2xl font-heading font-bold mb-2">Tu Cita Personalizada</h1>
-      <p className="text-sm text-gray-500 mb-6">Seleccionada especialmente para ti</p>
-      
-      {/* Personalized quote card with gradient background */}
-      <div className="bg-gradient-to-br from-primary/20 to-accent/20 rounded-xl p-6 mb-6 shadow-md">
-        <div className="bg-white/90 rounded-lg p-5 shadow-sm">
-          <p className="font-quote text-xl mb-3">"{quote.text}"</p>
-          <p className="font-quote text-sm text-gray-600">— {quote.author}</p>
+    <div className="flex flex-col h-full w-full max-w-lg mx-auto bg-gradient-to-br from-purple-50 to-pink-50">
+      {/* Minimal header as part of full-height layout */}
+      <div className="absolute top-0 left-0 right-0 py-3 px-4 z-10">
+        <div className="flex justify-center">
+          <h1 className="text-base font-heading text-purple-700 bg-white/80 px-3 py-1 rounded-full">Tu Cita Personalizada</h1>
         </div>
       </div>
-      
-      {/* Why this was selected for you */}
-      <div className="bg-gray-50 rounded-xl p-5 mb-6">
-        <h2 className="text-lg font-medium mb-2">¿Por qué esta cita?</h2>
-        <p className="text-gray-700 text-sm">
-          Basado en tu interés en {relevantTopic.toLowerCase()}, creemos que esta reflexión 
-          resonará contigo hoy.
-        </p>
-      </div>
-      
-      {/* Daily advice */}
-      <div className="mb-6">
-        <h2 className="text-lg font-medium mb-2">Consejo diario</h2>
-        <div className="bg-white rounded-xl border border-gray-200 p-4 shadow-sm">
-          <div className="flex gap-3">
-            <div className="text-primary text-xl">
+
+      {/* Quote container that takes full height and width */}
+      <div className="flex flex-col items-center justify-center h-full w-full px-5">
+        <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg p-6 w-full max-w-sm mb-4">
+          <p className="font-quote text-2xl leading-relaxed mb-6 text-gray-800">"{quote.text}"</p>
+          
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="font-quote text-lg text-gray-600">— {quote.author}</p>
+              <span className="text-xs px-3 py-1 rounded-full inline-block mt-1 bg-purple-100 text-purple-800">
+                Para ti
+              </span>
+            </div>
+            
+            <div className="flex space-x-4">
+              <button
+                className="text-gray-600 hover:text-primary transition-colors"
+                onClick={() => saveQuoteMutation.mutate()}
+                disabled={saveQuoteMutation.isPending || isSaved}
+              >
+                <Bookmark className={cn(
+                  "h-6 w-6", 
+                  isSaved ? "fill-current text-primary" : ""
+                )} />
+              </button>
+              
+              <button
+                className="text-gray-600 hover:text-primary transition-colors"
+                onClick={handleShare}
+              >
+                <Share2 className="h-6 w-6" />
+              </button>
+            </div>
+          </div>
+        </div>
+        
+        {/* Why this was selected for you - Simplified */}
+        <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg p-6 w-full max-w-sm">
+          <h2 className="text-base font-heading font-medium mb-2 text-purple-700">¿Por qué esta cita?</h2>
+          <p className="text-gray-700 text-sm mb-3">
+            Basado en tu interés en {relevantTopic.toLowerCase()}, creemos que esta reflexión 
+            resonará contigo hoy.
+          </p>
+          <div className="flex gap-2 mt-3 items-center">
+            <div className="text-purple-600 text-lg">
               💡
             </div>
-            <div>
-              <p className="text-gray-800 mb-1">Práctica de mindfulness</p>
-              <p className="text-sm text-gray-600">
-                Dedica 5 minutos hoy a observar tu respiración sin juzgar, simplemente 
-                notando cada inhalación y exhalación.
-              </p>
-            </div>
+            <p className="text-sm text-purple-600 font-medium">
+              Dedica unos minutos a respirar conscientemente
+            </p>
+          </div>
+          
+          {/* Simple countdown */}
+          <div className="flex justify-center items-center text-xs text-gray-500 mt-4">
+            <Clock className="mr-1 h-3 w-3" />
+            <span>Nueva cita en {getCountdownTime()}</span>
           </div>
         </div>
-      </div>
-      
-      {/* Interaction buttons */}
-      <div className="flex justify-around mb-4">
-        <button
-          className="flex flex-col items-center"
-          onClick={() => saveQuoteMutation.mutate()}
-          disabled={saveQuoteMutation.isPending || isSaved}
-        >
-          <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center mb-1">
-            <Bookmark className={isSaved ? "text-primary fill-current" : "text-primary"} />
-          </div>
-          <span className="text-xs text-gray-600">Guardar</span>
-        </button>
-        
-        <button
-          className="flex flex-col items-center"
-          onClick={() => toggleMemorizedMutation.mutate()}
-          disabled={toggleMemorizedMutation.isPending}
-        >
-          <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center mb-1">
-            <Brain className={isMemorized ? "text-primary fill-current" : "text-primary"} />
-          </div>
-          <span className="text-xs text-gray-600">Memorizar</span>
-        </button>
-        
-        <button
-          className="flex flex-col items-center"
-          onClick={handleShare}
-        >
-          <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center mb-1">
-            <Share2 className="text-primary" />
-          </div>
-          <span className="text-xs text-gray-600">Compartir</span>
-        </button>
-      </div>
-      
-      {/* Next quote countdown */}
-      <div className="flex justify-center items-center text-sm text-gray-500">
-        <Clock className="mr-2 h-4 w-4" />
-        <span>Nueva cita personalizada en {getCountdownTime()}</span>
       </div>
     </div>
   );

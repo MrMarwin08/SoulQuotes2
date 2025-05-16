@@ -211,69 +211,73 @@ const DailyQuotesScreen: React.FC<DailyQuotesScreenProps> = ({ userId }) => {
   const isMemorized = userQuote?.isMemorized || false;
 
   return (
-    <div className="flex flex-col h-full bg-gray-50">
-      {/* Minimal header */}
-      <div className="p-4 bg-white border-b shadow-sm">
+    <div 
+      className="flex flex-col h-full w-full max-w-lg mx-auto bg-gradient-to-br from-blue-50 to-purple-50"
+      ref={containerRef} 
+      onTouchStart={handleTouchStart}
+      onTouchMove={handleTouchMove}
+      onTouchEnd={handleTouchEnd}
+      onMouseDown={handleMouseDown}
+      onMouseMove={handleMouseMove}
+      onMouseUp={handleMouseUp}
+      onWheel={handleWheel}
+    >
+      {/* Minimal header as part of full-height layout */}
+      <div className="absolute top-0 left-0 right-0 py-3 px-4 z-10">
         <div className="flex justify-center">
-          <h1 className="text-xl font-heading text-gray-700">Citas del Día</h1>
+          <h1 className="text-base font-heading text-gray-700 bg-white/80 px-3 py-1 rounded-full">Citas del Día</h1>
         </div>
       </div>
       
-      {/* Full height quote container */}
-      <div 
-        ref={containerRef} 
-        className="flex-1 overflow-hidden touch-none cursor-grab"
-        onTouchStart={handleTouchStart}
-        onTouchMove={handleTouchMove}
-        onTouchEnd={handleTouchEnd}
-        onMouseDown={handleMouseDown}
-        onMouseMove={handleMouseMove}
-        onMouseUp={handleMouseUp}
-        onWheel={handleWheel}
-      >
-        <div className="h-full flex flex-col relative">
-          {/* Quote content - Simple design */}
-          <div className="flex-1 flex flex-col justify-center items-center px-6 z-10">
-            <div className="max-w-md bg-white rounded-xl shadow-md p-8 text-center">
-              <p className="font-quote text-2xl leading-relaxed mb-4 text-gray-800">"{currentQuote.text}"</p>
+      {/* Quote container that takes full height and width */}
+      <div className="flex items-center justify-center h-full w-full px-5">
+        <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg p-6 w-full max-w-sm">
+          <p className="font-quote text-2xl leading-relaxed mb-6 text-gray-800">"{currentQuote.text}"</p>
+          
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="font-quote text-lg text-gray-600">— {currentQuote.author}</p>
+              <span className={cn(
+                "text-xs px-3 py-1 rounded-full inline-block mt-1", 
+                getCategoryColor(currentQuote.category)
+              )}>
+                {currentQuote.category}
+              </span>
+            </div>
+            
+            <div className="flex space-x-4">
+              <button
+                className="text-gray-600 hover:text-primary transition-colors"
+                onClick={() => {
+                  if (!isSaved) {
+                    saveQuoteMutation.mutate(currentQuote.id);
+                  }
+                }}
+                disabled={saveQuoteMutation.isPending || isSaved}
+              >
+                <Bookmark className={cn(
+                  "h-6 w-6", 
+                  isSaved ? "fill-current text-primary" : ""
+                )} />
+              </button>
               
-              <div className="flex items-center justify-between">
-                <div className="text-left">
-                  <p className="font-quote text-lg text-gray-600">— {currentQuote.author}</p>
-                  <span className={cn(
-                    "text-xs px-3 py-1 rounded-full inline-block", 
-                    getCategoryColor(currentQuote.category)
-                  )}>
-                    {currentQuote.category}
-                  </span>
-                </div>
-                
-                <div className="flex space-x-3">
-                  <button
-                    className="text-gray-600 hover:text-primary transition-colors"
-                    onClick={() => {
-                      if (!isSaved) {
-                        saveQuoteMutation.mutate(currentQuote.id);
-                      }
-                    }}
-                    disabled={saveQuoteMutation.isPending || isSaved}
-                  >
-                    <Bookmark className={cn(
-                      "h-6 w-6", 
-                      isSaved ? "fill-current text-primary" : ""
-                    )} />
-                  </button>
-                  
-                  <button
-                    className="text-gray-600 hover:text-primary transition-colors"
-                    onClick={() => shareQuote(currentQuote)}
-                  >
-                    <Share2 className="h-6 w-6" />
-                  </button>
-                </div>
-              </div>
+              <button
+                className="text-gray-600 hover:text-primary transition-colors"
+                onClick={() => shareQuote(currentQuote)}
+              >
+                <Share2 className="h-6 w-6" />
+              </button>
             </div>
           </div>
+        </div>
+      </div>
+      
+      {/* Small indicator for swiping */}
+      <div className="absolute bottom-5 left-0 right-0 flex justify-center">
+        <div className="flex space-x-1">
+          <div className="w-1.5 h-1.5 rounded-full bg-gray-300"></div>
+          <div className="w-1.5 h-1.5 rounded-full bg-gray-500"></div>
+          <div className="w-1.5 h-1.5 rounded-full bg-gray-300"></div>
         </div>
       </div>
     </div>

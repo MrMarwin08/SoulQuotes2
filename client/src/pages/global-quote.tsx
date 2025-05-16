@@ -2,7 +2,7 @@ import React from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { apiRequest } from "@/lib/queryClient";
-import { Quote } from "@/lib/utils";
+import { Quote, cn } from "@/lib/utils";
 import { Bookmark, Star, Share2, Users, Heart } from "lucide-react";
 
 interface GlobalQuoteScreenProps {
@@ -75,8 +75,8 @@ const GlobalQuoteScreen: React.FC<GlobalQuoteScreenProps> = ({ userId }) => {
     }
   };
 
-  const isSaved = userQuotes?.some((uq: any) => uq.quoteId === quote?.id) ?? false;
-  const isFavorite = userQuotes?.some((uq: any) => uq.quoteId === quote?.id && uq.isFavorite) ?? false;
+  const isSaved = Array.isArray(userQuotes) ? userQuotes.some((uq: any) => uq.quoteId === quote?.id) : false;
+  const isFavorite = Array.isArray(userQuotes) ? userQuotes.some((uq: any) => uq.quoteId === quote?.id && uq.isFavorite) : false;
 
   if (isLoading) {
     return (
@@ -95,87 +95,62 @@ const GlobalQuoteScreen: React.FC<GlobalQuoteScreenProps> = ({ userId }) => {
   }
 
   return (
-    <div className="flex flex-col h-full p-5">
-      <h1 className="text-2xl font-heading font-bold mb-2">Cita Global del Día</h1>
-      <p className="text-sm text-gray-500 mb-6">
-        Conectando con miles de personas a través de la reflexión
-      </p>
+    <div className="flex flex-col h-full w-full max-w-lg mx-auto bg-gradient-to-br from-indigo-50 to-blue-50">
+      {/* Minimal header as part of full-height layout */}
+      <div className="absolute top-0 left-0 right-0 py-3 px-4 z-10">
+        <div className="flex justify-center">
+          <h1 className="text-base font-heading text-indigo-700 bg-white/80 px-3 py-1 rounded-full">Cita Global del Día</h1>
+        </div>
+      </div>
 
-      {/* Quote image */}
-      <div className="relative h-60 mb-6 rounded-xl overflow-hidden shadow-lg">
-        <img
-          src={quote.backgroundImageUrl || "https://pixabay.com/get/gf9b201fa108ca8db3a70aec9091838460de66dbf8990c121aa953f6ea8245fa81545a081dcc027b628fba5b1256f8a5d53c94d2954e38de39cd1d4137dec575e_1280.jpg"}
-          alt="Imagen inspiradora"
-          className="absolute inset-0 w-full h-full object-cover"
-        />
-        <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent"></div>
-        <div className="absolute bottom-0 left-0 right-0 p-6">
-          <p className="text-white font-quote text-xl font-medium mb-2">
-            "{quote.text}"
+      {/* Quote container that takes full height and width */}
+      <div className="flex flex-col items-center justify-center h-full w-full px-5">
+        <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg p-6 w-full max-w-sm mb-4">
+          <p className="font-quote text-2xl leading-relaxed mb-6 text-gray-800">"{quote.text}"</p>
+          
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="font-quote text-lg text-gray-600">— {quote.author}</p>
+              <span className="text-xs px-3 py-1 rounded-full inline-block mt-1 bg-indigo-100 text-indigo-800">
+                Cita Global
+              </span>
+            </div>
+            
+            <div className="flex space-x-4">
+              <button
+                className="text-gray-600 hover:text-primary transition-colors"
+                onClick={() => saveQuoteMutation.mutate()}
+                disabled={saveQuoteMutation.isPending || isSaved}
+              >
+                <Bookmark className={cn(
+                  "h-6 w-6", 
+                  isSaved ? "fill-current text-primary" : ""
+                )} />
+              </button>
+              
+              <button
+                className="text-gray-600 hover:text-primary transition-colors"
+                onClick={handleShare}
+              >
+                <Share2 className="h-6 w-6" />
+              </button>
+            </div>
+          </div>
+        </div>
+        
+        {/* Daily Lesson - Simplified */}
+        <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg p-6 w-full max-w-sm">
+          <h2 className="text-base font-heading font-medium mb-2 text-indigo-700">Reflexión del día</h2>
+          <p className="text-gray-700 text-sm mb-3">
+            Tómate un momento hoy para reflexionar sobre una acción que puedas realizar 
+            para cultivar felicidad genuina en tu vida.
           </p>
-          <p className="text-white/80 font-quote text-sm">— {quote.author}</p>
-        </div>
-      </div>
-
-      {/* Interaction buttons */}
-      <div className="flex justify-center gap-8 mb-8">
-        <button
-          className="flex flex-col items-center"
-          onClick={() => saveQuoteMutation.mutate()}
-          disabled={saveQuoteMutation.isPending || isSaved}
-        >
-          <div className="w-12 h-12 rounded-full bg-gray-100 flex items-center justify-center mb-1">
-            <Bookmark className={isSaved ? "text-primary fill-current" : "text-gray-600"} />
+          <div className="flex items-center gap-2">
+            <span className="text-indigo-600">💡</span>
+            <span className="text-sm text-indigo-600 font-medium">
+              Practica la gratitud consciente
+            </span>
           </div>
-          <span className="text-xs text-gray-500">Guardar</span>
-        </button>
-        
-        <button
-          className="flex flex-col items-center"
-          onClick={() => toggleFavoriteMutation.mutate()}
-          disabled={toggleFavoriteMutation.isPending}
-        >
-          <div className="w-12 h-12 rounded-full bg-gray-100 flex items-center justify-center mb-1">
-            <Star className={isFavorite ? "text-yellow-500 fill-current" : "text-gray-600"} />
-          </div>
-          <span className="text-xs text-gray-500">Favorito</span>
-        </button>
-        
-        <button
-          className="flex flex-col items-center"
-          onClick={handleShare}
-        >
-          <div className="w-12 h-12 rounded-full bg-gray-100 flex items-center justify-center mb-1">
-            <Share2 className="text-gray-600" />
-          </div>
-          <span className="text-xs text-gray-500">Compartir</span>
-        </button>
-      </div>
-
-      {/* Daily Lesson */}
-      <div className="bg-primary/5 rounded-xl p-5 mb-4">
-        <h2 className="text-lg font-heading font-bold mb-2">Lección de Vida</h2>
-        <p className="text-gray-700 mb-4">
-          Tómate un momento hoy para reflexionar sobre una acción que puedas realizar 
-          para cultivar felicidad genuina en tu vida y en la de quienes te rodean.
-        </p>
-        <div className="flex items-center gap-2">
-          <span className="text-primary">💡</span>
-          <span className="text-sm text-primary font-medium">
-            Practica la gratitud consciente
-          </span>
-        </div>
-      </div>
-
-      {/* Community engagement stats */}
-      <div className="flex items-center justify-between text-sm text-gray-500">
-        <div className="flex items-center gap-1">
-          <Users className="h-4 w-4" />
-          <span>12,482 personas reflexionando</span>
-        </div>
-        <div className="flex items-center gap-1">
-          <Heart className="h-4 w-4" />
-          <span>3,241 inspirados</span>
         </div>
       </div>
     </div>
