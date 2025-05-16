@@ -211,10 +211,12 @@ const DailyQuotesScreen: React.FC<DailyQuotesScreenProps> = ({ userId }) => {
   const isMemorized = userQuote?.isMemorized || false;
 
   return (
-    <div className="flex flex-col h-full">
-      {/* Small header */}
-      <div className="p-4">
-        <h1 className="text-2xl font-heading font-bold">Citas del Día</h1>
+    <div className="flex flex-col h-full bg-gray-50">
+      {/* Minimal header */}
+      <div className="p-4 bg-white border-b shadow-sm">
+        <div className="flex justify-center">
+          <h1 className="text-xl font-heading text-gray-700">Citas del Día</h1>
+        </div>
       </div>
       
       {/* Full height quote container */}
@@ -230,124 +232,46 @@ const DailyQuotesScreen: React.FC<DailyQuotesScreenProps> = ({ userId }) => {
         onWheel={handleWheel}
       >
         <div className="h-full flex flex-col relative">
-          {/* Quote background */}
-          {currentQuote.backgroundImageUrl && (
-            <div className="absolute inset-0 z-0">
-              <img 
-                src={currentQuote.backgroundImageUrl} 
-                alt="" 
-                className="w-full h-full object-cover"
-              />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent"></div>
-            </div>
-          )}
-          
-          {/* Quote content */}
-          <div className={cn(
-            "flex-1 flex flex-col justify-center items-center px-6 z-10",
-            currentQuote.backgroundImageUrl ? "text-white" : "text-foreground"
-          )}>
-            <div className="max-w-md text-center">
-              <p className="font-quote text-2xl leading-relaxed mb-4">"{currentQuote.text}"</p>
-              <p className="font-quote text-lg opacity-90 mb-3">— {currentQuote.author}</p>
-              <span className={cn(
-                "text-xs px-3 py-1 rounded-full inline-block", 
-                currentQuote.backgroundImageUrl 
-                  ? "bg-white/20 text-white" 
-                  : getCategoryColor(currentQuote.category)
-              )}>
-                {currentQuote.category}
-              </span>
-            </div>
-          </div>
-          
-          {/* Interaction buttons */}
-          <div className={cn(
-            "pb-6 pt-4 flex justify-center gap-8 z-10",
-            currentQuote.backgroundImageUrl ? "text-white" : "text-foreground"
-          )}>
-            <button
-              className="flex flex-col items-center"
-              onClick={() => {
-                if (!isSaved) {
-                  saveQuoteMutation.mutate(currentQuote.id);
-                }
-              }}
-              disabled={saveQuoteMutation.isPending || isSaved}
-            >
-              <div className={cn(
-                "w-12 h-12 rounded-full flex items-center justify-center mb-1",
-                currentQuote.backgroundImageUrl ? "bg-white/10" : "bg-gray-100"
-              )}>
-                <Bookmark className={cn(
-                  "h-6 w-6", 
-                  isSaved ? "fill-current" : "",
-                  currentQuote.backgroundImageUrl ? "text-white" : "text-gray-600"
-                )} />
+          {/* Quote content - Simple design */}
+          <div className="flex-1 flex flex-col justify-center items-center px-6 z-10">
+            <div className="max-w-md bg-white rounded-xl shadow-md p-8 text-center">
+              <p className="font-quote text-2xl leading-relaxed mb-4 text-gray-800">"{currentQuote.text}"</p>
+              
+              <div className="flex items-center justify-between">
+                <div className="text-left">
+                  <p className="font-quote text-lg text-gray-600">— {currentQuote.author}</p>
+                  <span className={cn(
+                    "text-xs px-3 py-1 rounded-full inline-block", 
+                    getCategoryColor(currentQuote.category)
+                  )}>
+                    {currentQuote.category}
+                  </span>
+                </div>
+                
+                <div className="flex space-x-3">
+                  <button
+                    className="text-gray-600 hover:text-primary transition-colors"
+                    onClick={() => {
+                      if (!isSaved) {
+                        saveQuoteMutation.mutate(currentQuote.id);
+                      }
+                    }}
+                    disabled={saveQuoteMutation.isPending || isSaved}
+                  >
+                    <Bookmark className={cn(
+                      "h-6 w-6", 
+                      isSaved ? "fill-current text-primary" : ""
+                    )} />
+                  </button>
+                  
+                  <button
+                    className="text-gray-600 hover:text-primary transition-colors"
+                    onClick={() => shareQuote(currentQuote)}
+                  >
+                    <Share2 className="h-6 w-6" />
+                  </button>
+                </div>
               </div>
-              <span className="text-xs opacity-90">Guardar</span>
-            </button>
-            
-            <button
-              className="flex flex-col items-center"
-              onClick={() => toggleFavoriteMutation.mutate(currentQuote.id)}
-              disabled={toggleFavoriteMutation.isPending}
-            >
-              <div className={cn(
-                "w-12 h-12 rounded-full flex items-center justify-center mb-1",
-                currentQuote.backgroundImageUrl ? "bg-white/10" : "bg-gray-100"
-              )}>
-                <Star className={cn(
-                  "h-6 w-6",
-                  isFavorite ? "fill-current text-yellow-500" : currentQuote.backgroundImageUrl ? "text-white" : "text-gray-600"
-                )} />
-              </div>
-              <span className="text-xs opacity-90">Favorito</span>
-            </button>
-            
-            <button
-              className="flex flex-col items-center"
-              onClick={() => toggleMemorizedMutation.mutate(currentQuote.id)}
-              disabled={toggleMemorizedMutation.isPending}
-            >
-              <div className={cn(
-                "w-12 h-12 rounded-full flex items-center justify-center mb-1",
-                currentQuote.backgroundImageUrl ? "bg-white/10" : "bg-gray-100"
-              )}>
-                <Brain className={cn(
-                  "h-6 w-6",
-                  isMemorized ? "fill-current" : "",
-                  currentQuote.backgroundImageUrl ? "text-white" : "text-gray-600"
-                )} />
-              </div>
-              <span className="text-xs opacity-90">Memorizar</span>
-            </button>
-            
-            <button
-              className="flex flex-col items-center"
-              onClick={() => shareQuote(currentQuote)}
-            >
-              <div className={cn(
-                "w-12 h-12 rounded-full flex items-center justify-center mb-1",
-                currentQuote.backgroundImageUrl ? "bg-white/10" : "bg-gray-100"
-              )}>
-                <Share2 className={cn(
-                  "h-6 w-6",
-                  currentQuote.backgroundImageUrl ? "text-white" : "text-gray-600"
-                )} />
-              </div>
-              <span className="text-xs opacity-90">Compartir</span>
-            </button>
-          </div>
-          
-          {/* Swipe indicators */}
-          <div className="absolute bottom-1 left-0 right-0 flex justify-center pb-1 opacity-70 z-20">
-            <div className="text-center text-xs">
-              {currentQuote.backgroundImageUrl ? (
-                <p className="text-white">Desliza para ver más citas</p>
-              ) : (
-                <p className="text-gray-500">Desliza para ver más citas</p>
-              )}
             </div>
           </div>
         </div>
