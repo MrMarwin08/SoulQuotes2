@@ -4,6 +4,8 @@ import {
   type Quote, type InsertQuote,
   type UserQuote, type InsertUserQuote
 } from "@shared/schema";
+import { db } from "./db";
+import { eq, and, desc, sql } from "drizzle-orm";
 
 export interface IStorage {
   // User methods
@@ -28,123 +30,56 @@ export interface IStorage {
   toggleFavorite(userId: number, quoteId: number): Promise<UserQuote | undefined>;
   toggleMemorized(userId: number, quoteId: number): Promise<UserQuote | undefined>;
   getUserQuotesFiltered(userId: number, filter: 'all' | 'favorites' | 'memorized'): Promise<(UserQuote & { quote: Quote })[]>;
+  
+  // Setup methods
+  initializeData(): Promise<void>;
 }
 
-export class MemStorage implements IStorage {
-  private users: Map<number, User>;
-  private quotes: Map<number, Quote>;
-  private userQuotes: Map<number, UserQuote>;
-  private currentUserId: number;
-  private currentQuoteId: number;
-  private currentUserQuoteId: number;
-  private dailyGlobalQuoteId: number;
+// This will be used to store the daily global quote ID
+let dailyGlobalQuoteId: number | null = null;
 
+export class DatabaseStorage implements IStorage {
   constructor() {
-    this.users = new Map();
-    this.quotes = new Map();
-    this.userQuotes = new Map();
-    this.currentUserId = 1;
-    this.currentQuoteId = 1;
-    this.currentUserQuoteId = 1;
-    
-    // Initialize with sample quotes
-    this.initializeQuotes();
-    
-    // Set a random quote as the daily global quote
+    // Initialize the daily global quote ID
     this.setDailyGlobalQuote();
   }
 
-  private initializeQuotes() {
-    const sampleQuotes: InsertQuote[] = [
-      {
-        text: "La vida es lo que hacemos de ella. Los viajes son los viajeros. Lo que vemos no es lo que vemos, sino lo que somos.",
-        author: "Fernando Pessoa",
-        category: "Filosofía",
-        backgroundImageUrl: "https://images.unsplash.com/photo-1518709268805-4e9042af9f23?ixlib=rb-4.0.3&auto=format&fit=crop"
-      },
-      {
-        text: "No hay viento favorable para el que no sabe a dónde va.",
-        author: "Séneca",
-        category: "Motivación",
-        backgroundImageUrl: "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?ixlib=rb-4.0.3&auto=format&fit=crop"
-      },
-      {
-        text: "La felicidad de tu vida depende de la calidad de tus pensamientos.",
-        author: "Marco Aurelio",
-        category: "Reflexión",
-        backgroundImageUrl: "https://images.unsplash.com/photo-1517960413843-0aee8e2b3285?ixlib=rb-4.0.3&auto=format&fit=crop"
-      },
-      {
-        text: "Nunca sabes lo fuerte que eres, hasta que ser fuerte es la única opción que te queda.",
-        author: "Bob Marley",
-        category: "Motivación",
-        backgroundImageUrl: "https://images.unsplash.com/photo-1513836279014-a89f7a76ae86?ixlib=rb-4.0.3&auto=format&fit=crop"
-      },
-      {
-        text: "La vida es realmente simple, pero insistimos en hacerla complicada.",
-        author: "Confucio",
-        category: "Filosofía",
-        backgroundImageUrl: null
-      },
-      {
-        text: "El verdadero viaje de descubrimiento no consiste en buscar nuevos territorios, sino en tener nuevos ojos.",
-        author: "Marcel Proust",
-        category: "Reflexión",
-        backgroundImageUrl: "https://images.unsplash.com/photo-1441974231531-c6227db76b6e?ixlib=rb-4.0.3&auto=format&fit=crop"
-      },
-      {
-        text: "El secreto de salir adelante es comenzar.",
-        author: "Mark Twain",
-        category: "Motivación",
-        backgroundImageUrl: null
-      },
-      {
-        text: "La felicidad no es algo prefabricado. Viene de tus propias acciones.",
-        author: "Dalai Lama",
-        category: "Reflexión",
-        backgroundImageUrl: "https://pixabay.com/get/gf9b201fa108ca8db3a70aec9091838460de66dbf8990c121aa953f6ea8245fa81545a081dcc027b628fba5b1256f8a5d53c94d2954e38de39cd1d4137dec575e_1280.jpg"
-      },
-      {
-        text: "No te quedes en el pasado, no sueñes con el futuro, concentra la mente en el momento presente.",
-        author: "Buda",
-        category: "Mindfulness",
-        backgroundImageUrl: null
+  private async setDailyGlobalQuote() {
+    // Check if we have any quotes
+    const allQuotes = await db.select().from(quotes).limit(1);
+    
+    if (allQuotes.length > 0) {
+      // Get a random quote
+      const randomQuote = await db.select()
+        .from(quotes)
+        .orderBy(sql`RANDOM()`)
+        .limit(1);
+      
+      if (randomQuote.length > 0) {
+        dailyGlobalQuoteId = randomQuote[0].id;
       }
-    ];
-
-    sampleQuotes.forEach(quote => {
-      this.createQuote(quote);
-    });
-  }
-
-  private setDailyGlobalQuote() {
-    const quotesArray = Array.from(this.quotes.values());
-    if (quotesArray.length > 0) {
-      // Select a random quote as the daily global quote
-      const randomIndex = Math.floor(Math.random() * quotesArray.length);
-      this.dailyGlobalQuoteId = quotesArray[randomIndex].id;
     }
   }
 
   // User methods
   async getUser(id: number): Promise<User | undefined> {
-    return this.users.get(id);
+    const result = await db.select().from(users).where(eq(users.id, id)).limit(1);
+    return result.length > 0 ? result[0] : undefined;
   }
 
   async getUserByUsername(username: string): Promise<User | undefined> {
-    return Array.from(this.users.values()).find(
-      (user) => user.username === username
-    );
+    const result = await db.select().from(users).where(eq(users.username, username)).limit(1);
+    return result.length > 0 ? result[0] : undefined;
   }
 
   async createUser(insertUser: InsertUser): Promise<User> {
-    const id = this.currentUserId++;
-    const user: User = { 
-      ...insertUser, 
-      id,
-      memberSince: insertUser.memberSince || new Date()
-    };
-    this.users.set(id, user);
+    const [user] = await db.insert(users).values({
+      username: insertUser.username,
+      password: insertUser.password,
+      fullName: insertUser.fullName,
+      profilePicture: insertUser.profilePicture,
+      preferences: insertUser.preferences,
+    }).returning();
     return user;
   }
 
@@ -152,57 +87,72 @@ export class MemStorage implements IStorage {
     const user = await this.getUser(id);
     if (!user) return undefined;
     
-    const updatedUser = {
-      ...user,
-      preferences: {
-        ...user.preferences,
-        ...preferences
-      }
+    const mergedPreferences = {
+      topics: [...(user.preferences?.topics || []), ...(preferences?.topics || [])],
+      authors: [...(user.preferences?.authors || []), ...(preferences?.authors || [])],
+      notificationTime: preferences?.notificationTime || user.preferences?.notificationTime || "08:00",
+      darkMode: preferences?.darkMode !== undefined ? preferences.darkMode : (user.preferences?.darkMode || false),
+      language: preferences?.language || user.preferences?.language || "Español"
     };
-    this.users.set(id, updatedUser);
+    
+    const [updatedUser] = await db.update(users)
+      .set({ preferences: mergedPreferences })
+      .where(eq(users.id, id))
+      .returning();
+    
     return updatedUser;
   }
 
   // Quote methods
   async getQuote(id: number): Promise<Quote | undefined> {
-    return this.quotes.get(id);
+    const result = await db.select().from(quotes).where(eq(quotes.id, id)).limit(1);
+    return result.length > 0 ? result[0] : undefined;
   }
 
   async getAllQuotes(): Promise<Quote[]> {
-    return Array.from(this.quotes.values());
+    return db.select().from(quotes);
   }
 
   async getQuotesByCategory(category: string): Promise<Quote[]> {
-    return Array.from(this.quotes.values()).filter(
-      (quote) => quote.category === category
-    );
+    return db.select().from(quotes).where(eq(quotes.category, category));
   }
 
   async createQuote(insertQuote: InsertQuote): Promise<Quote> {
-    const id = this.currentQuoteId++;
-    const quote: Quote = { ...insertQuote, id };
-    this.quotes.set(id, quote);
+    const [quote] = await db.insert(quotes).values(insertQuote).returning();
     return quote;
   }
 
   async getRandomQuote(): Promise<Quote | undefined> {
-    const quotes = Array.from(this.quotes.values());
-    if (quotes.length === 0) return undefined;
+    const result = await db.select()
+      .from(quotes)
+      .orderBy(sql`RANDOM()`)
+      .limit(1);
     
-    const randomIndex = Math.floor(Math.random() * quotes.length);
-    return quotes[randomIndex];
+    return result.length > 0 ? result[0] : undefined;
   }
 
   async getRandomQuoteByCategory(category: string): Promise<Quote | undefined> {
-    const quotesInCategory = await this.getQuotesByCategory(category);
-    if (quotesInCategory.length === 0) return undefined;
+    const result = await db.select()
+      .from(quotes)
+      .where(eq(quotes.category, category))
+      .orderBy(sql`RANDOM()`)
+      .limit(1);
     
-    const randomIndex = Math.floor(Math.random() * quotesInCategory.length);
-    return quotesInCategory[randomIndex];
+    return result.length > 0 ? result[0] : undefined;
   }
 
   async getDailyGlobalQuote(): Promise<Quote | undefined> {
-    return this.quotes.get(this.dailyGlobalQuoteId);
+    // If we don't have a daily global quote ID, set one
+    if (dailyGlobalQuoteId === null) {
+      await this.setDailyGlobalQuote();
+    }
+    
+    // If we still don't have a daily global quote ID, return a random quote
+    if (dailyGlobalQuoteId === null) {
+      return this.getRandomQuote();
+    }
+    
+    return this.getQuote(dailyGlobalQuoteId);
   }
 
   async getPersonalizedQuote(userId: number): Promise<Quote | undefined> {
@@ -224,51 +174,72 @@ export class MemStorage implements IStorage {
 
   // UserQuote methods
   async getUserQuotes(userId: number): Promise<(UserQuote & { quote: Quote })[]> {
-    const userQuotesArray = Array.from(this.userQuotes.values()).filter(
-      (userQuote) => userQuote.userId === userId
-    );
+    const result = await db.select({
+        userQuote: userQuotes,
+        quote: quotes
+      })
+      .from(userQuotes)
+      .leftJoin(quotes, eq(userQuotes.quoteId, quotes.id))
+      .where(eq(userQuotes.userId, userId));
     
-    return userQuotesArray.map(userQuote => {
-      const quote = this.quotes.get(userQuote.quoteId)!;
-      return { ...userQuote, quote };
-    });
+    // Filter out any results where quote is null and cast the types properly
+    return result
+      .filter(item => item.quote !== null)
+      .map(item => ({
+        ...item.userQuote,
+        quote: item.quote as Quote
+      }));
   }
 
   async saveQuote(insertUserQuote: InsertUserQuote): Promise<UserQuote> {
     // Check if this quote is already saved by the user
-    const existingUserQuote = Array.from(this.userQuotes.values()).find(
-      (uq) => uq.userId === insertUserQuote.userId && uq.quoteId === insertUserQuote.quoteId
-    );
+    const existingUserQuote = await db.select()
+      .from(userQuotes)
+      .where(
+        and(
+          eq(userQuotes.userId, insertUserQuote.userId),
+          eq(userQuotes.quoteId, insertUserQuote.quoteId)
+        )
+      )
+      .limit(1);
     
-    if (existingUserQuote) {
+    if (existingUserQuote.length > 0) {
       // Update the existing entry
-      const updatedUserQuote = {
-        ...existingUserQuote,
-        isFavorite: insertUserQuote.isFavorite ?? existingUserQuote.isFavorite,
-        isMemorized: insertUserQuote.isMemorized ?? existingUserQuote.isMemorized
-      };
-      this.userQuotes.set(existingUserQuote.id, updatedUserQuote);
+      const [updatedUserQuote] = await db.update(userQuotes)
+        .set({
+          isFavorite: insertUserQuote.isFavorite ?? existingUserQuote[0].isFavorite,
+          isMemorized: insertUserQuote.isMemorized ?? existingUserQuote[0].isMemorized
+        })
+        .where(eq(userQuotes.id, existingUserQuote[0].id))
+        .returning();
+      
       return updatedUserQuote;
     } else {
       // Create a new entry
-      const id = this.currentUserQuoteId++;
-      const userQuote: UserQuote = { 
-        ...insertUserQuote, 
-        id,
-        savedAt: new Date()
-      };
-      this.userQuotes.set(id, userQuote);
-      return userQuote;
+      const [newUserQuote] = await db.insert(userQuotes)
+        .values({
+          ...insertUserQuote,
+          savedAt: new Date()
+        })
+        .returning();
+      
+      return newUserQuote;
     }
   }
 
   async toggleFavorite(userId: number, quoteId: number): Promise<UserQuote | undefined> {
     // Find the user quote
-    const userQuote = Array.from(this.userQuotes.values()).find(
-      (uq) => uq.userId === userId && uq.quoteId === quoteId
-    );
+    const existingUserQuote = await db.select()
+      .from(userQuotes)
+      .where(
+        and(
+          eq(userQuotes.userId, userId),
+          eq(userQuotes.quoteId, quoteId)
+        )
+      )
+      .limit(1);
     
-    if (!userQuote) {
+    if (existingUserQuote.length === 0) {
       // If not found, create a new one with favorite set to true
       return this.saveQuote({
         userId,
@@ -279,21 +250,29 @@ export class MemStorage implements IStorage {
     }
     
     // Toggle the favorite status
-    const updatedUserQuote = {
-      ...userQuote,
-      isFavorite: !userQuote.isFavorite
-    };
-    this.userQuotes.set(userQuote.id, updatedUserQuote);
+    const [updatedUserQuote] = await db.update(userQuotes)
+      .set({
+        isFavorite: !existingUserQuote[0].isFavorite
+      })
+      .where(eq(userQuotes.id, existingUserQuote[0].id))
+      .returning();
+    
     return updatedUserQuote;
   }
 
   async toggleMemorized(userId: number, quoteId: number): Promise<UserQuote | undefined> {
     // Find the user quote
-    const userQuote = Array.from(this.userQuotes.values()).find(
-      (uq) => uq.userId === userId && uq.quoteId === quoteId
-    );
+    const existingUserQuote = await db.select()
+      .from(userQuotes)
+      .where(
+        and(
+          eq(userQuotes.userId, userId),
+          eq(userQuotes.quoteId, quoteId)
+        )
+      )
+      .limit(1);
     
-    if (!userQuote) {
+    if (existingUserQuote.length === 0) {
       // If not found, create a new one with memorized set to true
       return this.saveQuote({
         userId,
@@ -304,27 +283,119 @@ export class MemStorage implements IStorage {
     }
     
     // Toggle the memorized status
-    const updatedUserQuote = {
-      ...userQuote,
-      isMemorized: !userQuote.isMemorized
-    };
-    this.userQuotes.set(userQuote.id, updatedUserQuote);
+    const [updatedUserQuote] = await db.update(userQuotes)
+      .set({
+        isMemorized: !existingUserQuote[0].isMemorized
+      })
+      .where(eq(userQuotes.id, existingUserQuote[0].id))
+      .returning();
+    
     return updatedUserQuote;
   }
 
   async getUserQuotesFiltered(userId: number, filter: 'all' | 'favorites' | 'memorized'): Promise<(UserQuote & { quote: Quote })[]> {
-    const userQuotes = await this.getUserQuotes(userId);
+    // Build the base query
+    let baseQuery = db.select({
+        userQuote: userQuotes,
+        quote: quotes
+      })
+      .from(userQuotes)
+      .leftJoin(quotes, eq(userQuotes.quoteId, quotes.id))
+      .where(eq(userQuotes.userId, userId));
     
-    if (filter === 'all') {
-      return userQuotes;
-    } else if (filter === 'favorites') {
-      return userQuotes.filter(uq => uq.isFavorite);
+    // Get all results first
+    const allResults = await baseQuery;
+    
+    // Then filter in memory based on the filter type
+    let filteredResults;
+    if (filter === 'favorites') {
+      filteredResults = allResults.filter(item => item.userQuote.isFavorite === true);
     } else if (filter === 'memorized') {
-      return userQuotes.filter(uq => uq.isMemorized);
+      filteredResults = allResults.filter(item => item.userQuote.isMemorized === true);
+    } else {
+      filteredResults = allResults;
     }
     
-    return userQuotes;
+    // Filter out any results where quote is null and cast the types properly
+    return filteredResults
+      .filter(item => item.quote !== null)
+      .map(item => ({
+        ...item.userQuote,
+        quote: item.quote as Quote
+      }));
+  }
+
+  // Initialize data
+  async initializeData(): Promise<void> {
+    // Check if we already have quotes
+    const existingQuotes = await db.select().from(quotes).limit(1);
+    
+    if (existingQuotes.length === 0) {
+      // Add sample quotes
+      const sampleQuotes: InsertQuote[] = [
+        {
+          text: "La vida es lo que hacemos de ella. Los viajes son los viajeros. Lo que vemos no es lo que vemos, sino lo que somos.",
+          author: "Fernando Pessoa",
+          category: "Filosofía",
+          backgroundImageUrl: "https://images.unsplash.com/photo-1518709268805-4e9042af9f23?ixlib=rb-4.0.3&auto=format&fit=crop"
+        },
+        {
+          text: "No hay viento favorable para el que no sabe a dónde va.",
+          author: "Séneca",
+          category: "Motivación",
+          backgroundImageUrl: "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?ixlib=rb-4.0.3&auto=format&fit=crop"
+        },
+        {
+          text: "La felicidad de tu vida depende de la calidad de tus pensamientos.",
+          author: "Marco Aurelio",
+          category: "Reflexión",
+          backgroundImageUrl: "https://images.unsplash.com/photo-1517960413843-0aee8e2b3285?ixlib=rb-4.0.3&auto=format&fit=crop"
+        },
+        {
+          text: "Nunca sabes lo fuerte que eres, hasta que ser fuerte es la única opción que te queda.",
+          author: "Bob Marley",
+          category: "Motivación",
+          backgroundImageUrl: "https://images.unsplash.com/photo-1513836279014-a89f7a76ae86?ixlib=rb-4.0.3&auto=format&fit=crop"
+        },
+        {
+          text: "La vida es realmente simple, pero insistimos en hacerla complicada.",
+          author: "Confucio",
+          category: "Filosofía",
+          backgroundImageUrl: null
+        },
+        {
+          text: "El verdadero viaje de descubrimiento no consiste en buscar nuevos territorios, sino en tener nuevos ojos.",
+          author: "Marcel Proust",
+          category: "Reflexión",
+          backgroundImageUrl: "https://images.unsplash.com/photo-1441974231531-c6227db76b6e?ixlib=rb-4.0.3&auto=format&fit=crop"
+        },
+        {
+          text: "El secreto de salir adelante es comenzar.",
+          author: "Mark Twain",
+          category: "Motivación",
+          backgroundImageUrl: null
+        },
+        {
+          text: "La felicidad no es algo prefabricado. Viene de tus propias acciones.",
+          author: "Dalai Lama",
+          category: "Reflexión",
+          backgroundImageUrl: "https://pixabay.com/get/gf9b201fa108ca8db3a70aec9091838460de66dbf8990c121aa953f6ea8245fa81545a081dcc027b628fba5b1256f8a5d53c94d2954e38de39cd1d4137dec575e_1280.jpg"
+        },
+        {
+          text: "No te quedes en el pasado, no sueñes con el futuro, concentra la mente en el momento presente.",
+          author: "Buda",
+          category: "Mindfulness",
+          backgroundImageUrl: null
+        }
+      ];
+      
+      // Insert all quotes
+      await db.insert(quotes).values(sampleQuotes);
+    }
+    
+    // Set the daily global quote
+    await this.setDailyGlobalQuote();
   }
 }
 
-export const storage = new MemStorage();
+export const storage = new DatabaseStorage();

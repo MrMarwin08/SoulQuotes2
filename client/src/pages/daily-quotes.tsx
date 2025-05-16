@@ -141,7 +141,9 @@ const DailyQuotesScreen: React.FC<DailyQuotesScreenProps> = ({ userId }) => {
 
   // Get current quote and its saved status
   const currentQuote = quotes[currentQuoteIndex];
-  const userQuote = userQuotes?.find((uq: any) => uq.quoteId === currentQuote.id);
+  const userQuote = Array.isArray(userQuotes) 
+    ? userQuotes.find((uq: any) => uq.quoteId === currentQuote.id)
+    : undefined;
   const isSaved = !!userQuote;
   const isFavorite = userQuote?.isFavorite || false;
   const isMemorized = userQuote?.isMemorized || false;
