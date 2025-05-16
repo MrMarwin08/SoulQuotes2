@@ -212,7 +212,7 @@ const DailyQuotesScreen: React.FC<DailyQuotesScreenProps> = ({ userId }) => {
 
   return (
     <div 
-      className="flex flex-col h-full w-full max-w-lg mx-auto bg-gradient-to-br from-blue-50 to-purple-50"
+      className="flex flex-col h-[100vh] w-full bg-gradient-to-br from-blue-50 to-purple-50 overflow-hidden"
       ref={containerRef} 
       onTouchStart={handleTouchStart}
       onTouchMove={handleTouchMove}
@@ -223,22 +223,24 @@ const DailyQuotesScreen: React.FC<DailyQuotesScreenProps> = ({ userId }) => {
       onWheel={handleWheel}
     >
       {/* Minimal header as part of full-height layout */}
-      <div className="absolute top-0 left-0 right-0 py-3 px-4 z-10">
+      <div className="fixed top-0 left-0 right-0 py-3 z-10 pointer-events-none">
         <div className="flex justify-center">
-          <h1 className="text-base font-heading text-gray-700 bg-white/80 px-3 py-1 rounded-full">Citas del Día</h1>
+          <h1 className="text-sm font-heading text-gray-700 bg-white/80 px-3 py-1 rounded-full shadow-sm pointer-events-auto">
+            Citas del Día
+          </h1>
         </div>
       </div>
       
       {/* Quote container that takes full height and width */}
       <div className="flex items-center justify-center h-full w-full px-5">
-        <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg p-6 w-full max-w-sm">
+        <div className="bg-white/90 backdrop-blur-sm rounded-xl shadow-md p-6 w-full">
           <p className="font-quote text-2xl leading-relaxed mb-6 text-gray-800">"{currentQuote.text}"</p>
           
           <div className="flex items-center justify-between">
             <div>
               <p className="font-quote text-lg text-gray-600">— {currentQuote.author}</p>
               <span className={cn(
-                "text-xs px-3 py-1 rounded-full inline-block mt-1", 
+                "text-xs px-2 py-1 rounded-full inline-block mt-1", 
                 getCategoryColor(currentQuote.category)
               )}>
                 {currentQuote.category}
@@ -256,7 +258,7 @@ const DailyQuotesScreen: React.FC<DailyQuotesScreenProps> = ({ userId }) => {
                 disabled={saveQuoteMutation.isPending || isSaved}
               >
                 <Bookmark className={cn(
-                  "h-6 w-6", 
+                  "h-5 w-5", 
                   isSaved ? "fill-current text-primary" : ""
                 )} />
               </button>
@@ -265,7 +267,7 @@ const DailyQuotesScreen: React.FC<DailyQuotesScreenProps> = ({ userId }) => {
                 className="text-gray-600 hover:text-primary transition-colors"
                 onClick={() => shareQuote(currentQuote)}
               >
-                <Share2 className="h-6 w-6" />
+                <Share2 className="h-5 w-5" />
               </button>
             </div>
           </div>
@@ -273,11 +275,11 @@ const DailyQuotesScreen: React.FC<DailyQuotesScreenProps> = ({ userId }) => {
       </div>
       
       {/* Small indicator for swiping */}
-      <div className="absolute bottom-5 left-0 right-0 flex justify-center">
-        <div className="flex space-x-1">
-          <div className="w-1.5 h-1.5 rounded-full bg-gray-300"></div>
-          <div className="w-1.5 h-1.5 rounded-full bg-gray-500"></div>
-          <div className="w-1.5 h-1.5 rounded-full bg-gray-300"></div>
+      <div className="fixed bottom-4 left-0 right-0 flex justify-center">
+        <div className="flex space-x-2">
+          <div className="w-1 h-1 rounded-full bg-gray-300"></div>
+          <div className="w-1 h-1 rounded-full bg-gray-600"></div>
+          <div className="w-1 h-1 rounded-full bg-gray-300"></div>
         </div>
       </div>
     </div>

@@ -95,23 +95,25 @@ const GlobalQuoteScreen: React.FC<GlobalQuoteScreenProps> = ({ userId }) => {
   }
 
   return (
-    <div className="flex flex-col h-full w-full max-w-lg mx-auto bg-gradient-to-br from-indigo-50 to-blue-50">
+    <div className="flex flex-col h-[100vh] w-full bg-gradient-to-br from-indigo-50 to-blue-50 overflow-hidden">
       {/* Minimal header as part of full-height layout */}
-      <div className="absolute top-0 left-0 right-0 py-3 px-4 z-10">
+      <div className="fixed top-0 left-0 right-0 py-3 z-10 pointer-events-none">
         <div className="flex justify-center">
-          <h1 className="text-base font-heading text-indigo-700 bg-white/80 px-3 py-1 rounded-full">Cita Global del Día</h1>
+          <h1 className="text-sm font-heading text-indigo-700 bg-white/80 px-3 py-1 rounded-full shadow-sm pointer-events-auto">
+            Cita Global del Día
+          </h1>
         </div>
       </div>
 
       {/* Quote container that takes full height and width */}
-      <div className="flex flex-col items-center justify-center h-full w-full px-5">
-        <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg p-6 w-full max-w-sm mb-4">
+      <div className="flex flex-col items-center justify-center h-full w-full px-5 gap-4">
+        <div className="bg-white/90 backdrop-blur-sm rounded-xl shadow-md p-6 w-full">
           <p className="font-quote text-2xl leading-relaxed mb-6 text-gray-800">"{quote.text}"</p>
           
           <div className="flex items-center justify-between">
             <div>
               <p className="font-quote text-lg text-gray-600">— {quote.author}</p>
-              <span className="text-xs px-3 py-1 rounded-full inline-block mt-1 bg-indigo-100 text-indigo-800">
+              <span className="text-xs px-2 py-1 rounded-full inline-block mt-1 bg-indigo-100 text-indigo-800">
                 Cita Global
               </span>
             </div>
@@ -123,7 +125,7 @@ const GlobalQuoteScreen: React.FC<GlobalQuoteScreenProps> = ({ userId }) => {
                 disabled={saveQuoteMutation.isPending || isSaved}
               >
                 <Bookmark className={cn(
-                  "h-6 w-6", 
+                  "h-5 w-5", 
                   isSaved ? "fill-current text-primary" : ""
                 )} />
               </button>
@@ -132,25 +134,33 @@ const GlobalQuoteScreen: React.FC<GlobalQuoteScreenProps> = ({ userId }) => {
                 className="text-gray-600 hover:text-primary transition-colors"
                 onClick={handleShare}
               >
-                <Share2 className="h-6 w-6" />
+                <Share2 className="h-5 w-5" />
               </button>
             </div>
           </div>
         </div>
         
         {/* Daily Lesson - Simplified */}
-        <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg p-6 w-full max-w-sm">
-          <h2 className="text-base font-heading font-medium mb-2 text-indigo-700">Reflexión del día</h2>
-          <p className="text-gray-700 text-sm mb-3">
-            Tómate un momento hoy para reflexionar sobre una acción que puedas realizar 
-            para cultivar felicidad genuina en tu vida.
-          </p>
-          <div className="flex items-center gap-2">
+        <div className="bg-white/90 backdrop-blur-sm rounded-xl shadow-md p-5 w-full">
+          <div className="flex items-center gap-2 mb-2">
             <span className="text-indigo-600">💡</span>
-            <span className="text-sm text-indigo-600 font-medium">
-              Practica la gratitud consciente
-            </span>
+            <h2 className="text-sm font-medium text-indigo-700">Reflexión del día</h2>
           </div>
+          <p className="text-gray-700 text-sm">
+            Practica la gratitud consciente tomando un momento para reflexionar sobre algo 
+            que te haga feliz hoy.
+          </p>
+        </div>
+      </div>
+      
+      {/* Small indicator for swiping */}
+      <div className="fixed bottom-4 left-0 right-0 flex justify-center">
+        <div className="flex space-x-2">
+          <div className="w-1 h-1 rounded-full bg-gray-300"></div>
+          <div className="w-1 h-1 rounded-full bg-gray-300"></div>
+          <div className="w-1 h-1 rounded-full bg-gray-600"></div>
+          <div className="w-1 h-1 rounded-full bg-gray-300"></div>
+          <div className="w-1 h-1 rounded-full bg-gray-300"></div>
         </div>
       </div>
     </div>

@@ -35,7 +35,7 @@ const Home: React.FC = () => {
   }, [activeScreen]);
 
   return (
-    <div className="min-h-screen flex flex-col bg-background text-foreground">
+    <div className="h-[100vh] w-full flex flex-col bg-background text-foreground overflow-hidden">
       <div
         ref={containerRef}
         className="swiper-container flex-1 flex overflow-x-auto hide-scrollbar scroll-snap-x-mandatory"
@@ -78,11 +78,13 @@ const Home: React.FC = () => {
       </div>
 
       {/* Bottom navigation dots */}
-      <NavigationDots
-        totalScreens={5}
-        activeScreen={activeScreen}
-        onNavigate={handleNavigate}
-      />
+      <div className="fixed bottom-3 left-0 right-0 z-10">
+        <NavigationDots
+          totalScreens={5}
+          activeScreen={activeScreen}
+          onNavigate={handleNavigate}
+        />
+      </div>
     </div>
   );
 };
