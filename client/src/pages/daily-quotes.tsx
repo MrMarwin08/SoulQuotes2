@@ -68,6 +68,7 @@ const DailyQuotesScreen: React.FC<DailyQuotesScreenProps> = ({ userId }) => {
     },
   });
 
+  // Handle touch events for mobile
   const handleTouchStart = (e: React.TouchEvent) => {
     startY.current = e.touches[0].clientY;
     setIsSwiping(false);
@@ -105,6 +106,67 @@ const DailyQuotesScreen: React.FC<DailyQuotesScreenProps> = ({ userId }) => {
     
     startY.current = null;
     setIsSwiping(false);
+  };
+  
+  // Handle mouse events for desktop
+  const handleMouseDown = (e: React.MouseEvent) => {
+    startY.current = e.clientY;
+    setIsSwiping(false);
+  };
+  
+  const handleMouseMove = (e: React.MouseEvent) => {
+    if (startY.current === null) return;
+    
+    const currentY = e.clientY;
+    const diffY = startY.current - currentY;
+    
+    // Only set swiping if there's a significant move
+    if (Math.abs(diffY) > 10) {
+      setIsSwiping(true);
+    }
+  };
+  
+  const handleMouseUp = (e: React.MouseEvent) => {
+    if (startY.current === null || !isSwiping) return;
+    
+    const currentY = e.clientY;
+    const diffY = startY.current - currentY;
+    
+    if (diffY > 50 && quotes) {  // Swipe up
+      // Go to next quote
+      setCurrentQuoteIndex((prevIndex) => 
+        prevIndex + 1 >= quotes.length ? 0 : prevIndex + 1
+      );
+    } else if (diffY < -50 && quotes) {  // Swipe down
+      // Go to previous quote
+      setCurrentQuoteIndex((prevIndex) => 
+        prevIndex - 1 < 0 ? quotes.length - 1 : prevIndex - 1
+      );
+    }
+    
+    startY.current = null;
+    setIsSwiping(false);
+  };
+  
+  // Handle wheel events
+  const handleWheel = (e: React.WheelEvent) => {
+    if (!quotes) return;
+    
+    // Prevent the default scroll behavior
+    e.preventDefault();
+    
+    // deltaY > 0 means scrolling down
+    if (e.deltaY > 0) {
+      // Go to next quote
+      setCurrentQuoteIndex((prevIndex) => 
+        prevIndex + 1 >= quotes.length ? 0 : prevIndex + 1
+      );
+    } else if (e.deltaY < 0) {
+      // Go to previous quote
+      setCurrentQuoteIndex((prevIndex) => 
+        prevIndex - 1 < 0 ? quotes.length - 1 : prevIndex - 1
+      );
+    }
   };
 
   const getCategoryColor = (category: string) => {
@@ -158,10 +220,14 @@ const DailyQuotesScreen: React.FC<DailyQuotesScreenProps> = ({ userId }) => {
       {/* Full height quote container */}
       <div 
         ref={containerRef} 
-        className="flex-1 overflow-hidden touch-none"
+        className="flex-1 overflow-hidden touch-none cursor-grab"
         onTouchStart={handleTouchStart}
         onTouchMove={handleTouchMove}
         onTouchEnd={handleTouchEnd}
+        onMouseDown={handleMouseDown}
+        onMouseMove={handleMouseMove}
+        onMouseUp={handleMouseUp}
+        onWheel={handleWheel}
       >
         <div className="h-full flex flex-col relative">
           {/* Quote background */}
