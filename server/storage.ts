@@ -73,13 +73,22 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createUser(insertUser: InsertUser): Promise<User> {
-    const [user] = await db.insert(users).values({
+    // Convert the object to a plain object before inserting
+    const userToInsert = {
       username: insertUser.username,
       password: insertUser.password,
-      fullName: insertUser.fullName,
-      profilePicture: insertUser.profilePicture,
-      preferences: insertUser.preferences,
-    }).returning();
+      fullName: insertUser.fullName || null,
+      profilePicture: insertUser.profilePicture || null,
+      preferences: insertUser.preferences || {
+        topics: [],
+        authors: [],
+        notificationTime: "08:00",
+        darkMode: false,
+        language: "Español"
+      }
+    };
+    
+    const [user] = await db.insert(users).values(userToInsert).returning();
     return user;
   }
 
@@ -391,6 +400,30 @@ export class DatabaseStorage implements IStorage {
       
       // Insert all quotes
       await db.insert(quotes).values(sampleQuotes);
+    }
+    
+    // Check if we have a default user
+    const existingUser = await db.select().from(users).where(eq(users.id, 1)).limit(1);
+    
+    if (existingUser.length === 0) {
+      // Create the default user
+      await db.insert(users).values({
+        id: 1,
+        username: "mariagarcia",
+        password: "password123", // In a real app, this would be hashed
+        fullName: "María García",
+        profilePicture: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?ixlib=rb-4.0.3&auto=format&fit=crop&w=150&h=150",
+        memberSince: new Date(2023, 9, 1), // October 2023
+        preferences: {
+          topics: ["Motivación", "Filosofía", "Mindfulness"],
+          authors: ["Buda", "Séneca", "Cervantes"],
+          notificationTime: "08:00",
+          darkMode: false,
+          language: "Español"
+        }
+      });
+      
+      console.log("Default user created");
     }
     
     // Set the daily global quote
